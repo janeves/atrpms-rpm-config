@@ -78,21 +78,9 @@
 #xemacssitestart %{_libdir}/xemacs/xemacs-packages/lisp/site-start.d
 
 
-%__ldconfig %(echo %{expand:%%__ldconfig_%{distid}} | grep '^%' > /dev/null && echo /usr/sbin/ldconfig || echo %{expand:%%__ldconfig_%{distid}})
-%__ldconfig_el3 /sbin/ldconfig
-%__ldconfig_el4 /sbin/ldconfig
-%__ldconfig_el5 /sbin/ldconfig
-%__ldconfig_el6 /sbin/ldconfig
-%__ldconfig_f12 /sbin/ldconfig
-%__ldconfig_f17 /sbin/ldconfig
+%__ldconfig /sbin/ldconfig
 
-%__depmod %(echo %{expand:%%__depmod_%{distid}} | grep '^%' > /dev/null && echo /usr/sbin/depmod || echo %{expand:%%__depmod_%{distid}})
-%__depmod_el3 /sbin/depmod
-%__depmod_el4 /sbin/depmod
-%__depmod_el5 /sbin/depmod
-%__depmod_el6 /sbin/depmod
-%__depmod_f12 /sbin/depmod
-%__depmod_f17 /sbin/depmod
+%__depmod /sbin/depmod
 
 ###
 ###
