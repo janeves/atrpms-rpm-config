@@ -1,0 +1,1 @@
+# atrpms-rpm-config
