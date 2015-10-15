@@ -1,0 +1,3 @@
+atrpms-rpm-config Changelog
+
+* 2015-10-15 - janeves - removed dynamic determination of ldconfig and depmod and set them both to use /sbin/
