@@ -1,0 +1,195 @@
+%distinitials %(grep -i fedora.core /etc/redhat-release >/dev/null && echo "fc" || { grep -i fedora.release /etc/redhat-release >/dev/null && echo "f" || { grep -i "red hat enterprise linux" /etc/redhat-release >/dev/null && echo "el" || echo "RHL"; }; })
+#disttaginitials %(grep -i fedora /etc/redhat-release >/dev/null && echo "fc" || { grep -i "red hat enterprise linux" /etc/redhat-release >/dev/null && echo "el" || echo "RHL"; })
+%disttaginitials %(grep -i fedora /etc/redhat-release >/dev/null && echo "fc" || echo "el";)
+%distversion %(rpm -qf --qf='%{VERSION}' /etc/redhat-release | sed -e's,^\\([0-9]*\\)[^0-9].*,\\1,') 
+%disttagversion %(rpm -qf --qf='%{VERSION}' /etc/redhat-release | sed -e's,^\\([0-9]*\\)[^0-9].*,\\1,') 
+#distname %(grep -i fedora.core /etc/redhat-release >/dev/null && echo "Fedora Core" || { grep -i fedora.release /etc/redhat-release >/dev/null && echo "Fedora" || { grep -i "red hat enterprise linux" /etc/redhat-release >/dev/null && echo "Red Hat Enterprise Linux" || echo "Red Hat Linux"; }; })
+%distname %(grep -i fedora.core /etc/redhat-release >/dev/null && echo "Fedora Core" || { grep -i fedora.release /etc/redhat-release >/dev/null && echo "Fedora" || echo "Red Hat Enterprise Linux"; })
+%distid %(echo %{distinitials}%{distversion} | sed -e's,\\.,_,g')
+%disttag %(echo %{disttaginitials}%{disttagversion} | sed -e's,\\.,_,g')
+%dist .%{distinitials}%{distversion}
+
+%eversion	%{?epoch:%{epoch}:}%{version}
+%evr		%{?epoch:%{epoch}:}%{version}-%{release}
+
+%__find_requires        /usr/lib/rpm/atrpms/find-requires
+%__find_provides        /usr/lib/rpm/atrpms/find-provides
+%__os_install_post    \
+    /usr/lib/rpm/atrpms/brp-compress \
+    /usr/lib/rpm/atrpms/brp-strip %{__strip} \
+    /usr/lib/rpm/atrpms/brp-strip-static-archive %{__strip} \
+    /usr/lib/rpm/atrpms/brp-strip-comment-note %{__strip} %{__objdump} \
+%{nil}
+
+################################################################
+%_initdir	%{_sysconfdir}/rc.d/init.d
+%_initddir	%{_sysconfdir}/rc.d/init.d
+%_varlibdir	%{_localstatedir}/lib
+%_varcachedir	%{_localstatedir}/cache
+%_logdir		%{_localstatedir}/log
+%_rundir		%{_localstatedir}/run
+%_subsysdir	%{_localstatedir}/lock/subsys
+%_sysconfigdir	%{_sysconfdir}/sysconfig
+%_logrotatedir	%{_sysconfdir}/logrotate.d
+
+###
+
+%sgmlbase	%{_datadir}/sgml
+%sgmlcatdir	%{_sysconfdir}/sgml
+%rootcat	%{sgmlcatdir}/catalog
+
+%xmlbase	%{_datadir}/xml
+%xmlcatdir	%{_sysconfdir}/xml
+%rootxmlcat	%{xmlcatdir}/catalog
+
+################################################################ python
+# setup ... --root ...
+%python_version	%(python -c "import sys; print sys.version[:3]")
+#python_libdir	%(python -c "from distutils import sysconfig; print sysconfig.get_python_lib()")
+
+#python_libdir  %(python -c "from distutils import sysconfig; print sysconfig.get_python_lib()" | sed -e's,/usr/lib/,%{_libdir}/,')
+#python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")
+#python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")
+
+%python_libdir %{_libdir}/python%{python_version}/site-packages
+%python_sitelib /usr/lib/python%{python_version}/site-packages
+%python_sitearch %{_libdir}/python%{python_version}/site-packages
+
+
+%python_burninversion %{nil}
+#test -d %{buildroot} && find %{buildroot} -type f | xargs grep -l '^#!.*python' | xargs perl -pi -e's,^(#!.*python)[0-9.]*,${1}%python_version,'
+################################################################ tex
+
+%texmf           %{_datadir}/texmf
+%texmflocal      %{_datadir}/texmf-local
+%vartexmf        %{_datadir}/texmf-var
+
+
+################################################################ (x)emacs
+%emacspkgdir %{_datadir}/emacs/site-lisp
+
+# >= RH9
+%xemacspkgdir %{_datadir}/xemacs/site-packages
+%vendorxemacspkgdir %{_datadir}/xemacs/xemacs-packages
+%xemacssitestart %{_datadir}/xemacs/site-packages/lisp/site-start.d
+# <= RH8_0
+#xemacspkgdir %{_libdir}/xemacs/site-packages
+#vendorxemacspkgdir %{_libdir}/xemacs/xemacs-packages
+#xemacssitestart %{_libdir}/xemacs/xemacs-packages/lisp/site-start.d
+
+
+%__ldconfig %(echo %{expand:%%__ldconfig_%{distid}} | grep '^%' > /dev/null && echo /usr/sbin/ldconfig || echo %{expand:%%__ldconfig_%{distid}})
+%__ldconfig_el3 /sbin/ldconfig
+%__ldconfig_el4 /sbin/ldconfig
+%__ldconfig_el5 /sbin/ldconfig
+%__ldconfig_el6 /sbin/ldconfig
+%__ldconfig_f12 /sbin/ldconfig
+%__ldconfig_f17 /sbin/ldconfig
+
+%__depmod %(echo %{expand:%%__depmod_%{distid}} | grep '^%' > /dev/null && echo /usr/sbin/depmod || echo %{expand:%%__depmod_%{distid}})
+%__depmod_el3 /sbin/depmod
+%__depmod_el4 /sbin/depmod
+%__depmod_el5 /sbin/depmod
+%__depmod_el6 /sbin/depmod
+%__depmod_f12 /sbin/depmod
+%__depmod_f17 /sbin/depmod
+
+###
+###
+###
+
+
+
+%_x_prefix %(echo %{expand:%%_x_prefix_%{distid}} | grep '^%' > /dev/null && echo %{_prefix} || echo %{expand:%%_x_prefix_%{distid}})
+%_x_includes %(echo %{expand:%%_x_includes_%{distid}} | grep '^%' > /dev/null && echo %{_includedir} || echo %{expand:%%_x_includes_%{distid}})
+%_x_libraries %(echo %{expand:%%_x_libraries_%{distid}} | grep '^%' > /dev/null && echo %{_libdir} || echo %{expand:%%_x_libraries_%{distid}})
+%_x_module_path %(echo %{expand:%%_x_module_path_%{distid}} | grep '^%' > /dev/null && echo %{_libdir}/xorg/modules || echo %{expand:%%_x_module_path_%{distid}})
+%_x_bindir %(echo %{expand:%%_x_bindir_%{distid}} | grep '^%' > /dev/null && echo %{_bindir} || echo %{expand:%%_x_bindir_%{distid}})
+
+%_x_prefix_el4 /usr/X11R6
+%_x_includes_el4 /usr/X11R6/include
+%_x_libraries_el4 /usr/X11R6/%{_lib}
+%_x_module_path_el4 /usr/X11R6/%{_lib}/modules
+%_x_bindir_el4 /usr/X11R6/bin
+%_x_prefix_el3 /usr/X11R6
+%_x_includes_el3 /usr/X11R6/include
+%_x_libraries_el3 /usr/X11R6/%{_lib}
+%_x_module_path_el3 /usr/X11R6/%{_lib}/modules
+%_x_bindir_el3 /usr/X11R6/bin
+%_x_prefix_fc4 /usr/X11R6
+%_x_includes_fc4 /usr/X11R6/include
+%_x_libraries_fc4 /usr/X11R6/%{_lib}
+%_x_module_path_fc4 /usr/X11R6/%{_lib}/modules
+%_x_bindir_fc4 /usr/X11R6/bin
+%_x_prefix_fc3 /usr/X11R6
+%_x_includes_fc3 /usr/X11R6/include
+%_x_libraries_fc3 /usr/X11R6/%{_lib}
+%_x_module_path_fc3 /usr/X11R6/%{_lib}/modules
+%_x_bindir_fc3 /usr/X11R6/bin
+%_x_prefix_fc2 /usr/X11R6
+%_x_includes_fc2 /usr/X11R6/include
+%_x_libraries_fc2 /usr/X11R6/%{_lib}
+%_x_module_path_fc2 /usr/X11R6/%{_lib}/modules
+%_x_bindir_fc2 /usr/X11R6/bin
+%_x_prefix_fc1 /usr/X11R6
+%_x_includes_fc1 /usr/X11R6/include
+%_x_libraries_fc1 /usr/X11R6/%{_lib}
+%_x_module_path_fc1 /usr/X11R6/%{_lib}/modules
+%_x_bindir_fc1 /usr/X11R6/bin
+%_x_prefix_rh9 /usr/X11R6
+%_x_includes_rh9 /usr/X11R6/include
+%_x_libraries_rh9 /usr/X11R6/%{_lib}
+%_x_module_path_rh9 /usr/X11R6/%{_lib}/modules
+%_x_bindir_rh9 /usr/X11R6/bin
+%_x_prefix_rh8_0 /usr/X11R6
+%_x_includes_rh8_0 /usr/X11R6/include
+%_x_libraries_rh8_0 /usr/X11R6/%{_lib}
+%_x_module_path_rh8_0 /usr/X11R6/%{_lib}/modules
+%_x_bindir_rh8_0 /usr/X11R6/bin
+%_x_prefix_rh7_3 /usr/X11R6
+%_x_includes_rh7_3 /usr/X11R6/include
+%_x_libraries_rh7_3 /usr/X11R6/%{_lib}
+%_x_module_path_rh7_3 /usr/X11R6/%{_lib}/modules
+%_x_bindir_rh7_3 /usr/X11R6/bin
+
+%_pkgdocdir %(echo %{expand:%%_pkgdocdir_%{distid}} | grep '^%' > /dev/null && echo %{_docdir}/%{name} || echo %{expand:%%_pkgdocdir_%{distid}})
+
+%_pkgdocdir_el7 %{_docdir}/%{name}-%{version}
+%_pkgdocdir_el6 %{_docdir}/%{name}-%{version}
+%_pkgdocdir_fc19 %{_docdir}/%{name}-%{version}
+%_pkgdocdir_fc18 %{_docdir}/%{name}-%{version}
+
+%__spec_install_post\
+    %{?__debug_package:%{__debug_install_post}}\
+    %{?__lib_packages:%{__lib_install_post}}\
+    %{?__devel_package:%{__devel_install_post}}\
+    /usr/lib/rpm/atrpms/python_burninversion.sh\
+    %{__arch_install_post}\
+    %{__os_install_post}\
+%{nil}
+
+%prep \
+%%prep\
+LANG=C\
+export LANG\
+unset DISPLAY || :\
+%{nil}
+
+%build %%build\
+LANG=C\
+export LANG\
+unset DISPLAY || :\
+%{nil}
+
+%install %{?_enable_debug_packages:%{?buildsubdir:%{debug_package}}}\
+%{?__lib_packages:%{expand:%__lib_packages}}\
+%{?_enable_devel_packages:%{devel_package}}\
+%%install\
+LANG=C\
+export LANG\
+unset DISPLAY || :\
+%{nil}
+
+
+
+

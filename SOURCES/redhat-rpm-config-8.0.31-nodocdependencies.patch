@@ -1,0 +1,22 @@
+--- redhat-rpm-config-8.0.31/find-requires.nodocautodeps	2002-11-22 19:56:01.000000000 +0100
++++ redhat-rpm-config-8.0.31/find-requires	2004-08-20 22:10:55.000000000 +0200
+@@ -20,7 +20,7 @@
+ #
+ # --- Grab the file manifest and classify files.
+ #filelist=`sed "s/['\"]/\\\&/g"`
+-filelist=`sed "s/[]['\"*?{}]/\\\\\&/g"`
++filelist=`sed "s/[]['\"*?{}]/\\\\\&/g" | grep -v /usr/share/doc`
+ exelist=`echo $filelist | xargs -r file | egrep -v ":.* (commands|script) " | \
+ 	grep ":.*executable" | cut -d: -f1`
+ scriptlist=`echo $filelist | xargs -r file | \
+--- redhat-rpm-config-8.0.31/find-provides.nodocautodeps	2002-11-22 19:56:01.000000000 +0100
++++ redhat-rpm-config-8.0.31/find-provides	2004-08-20 22:10:52.000000000 +0200
+@@ -5,7 +5,7 @@
+ 
+ [ -z "$OBJDUMP" ] && OBJDUMP=objdump
+ 
+-filelist=`sed "s/['\"]/\\\&/g"`
++filelist=`sed "s/['\"]/\\\&/g" | grep -v /usr/share/doc`
+ 
+ solist=$(echo $filelist | grep "\\.so" | grep -v "^/lib/ld.so" | \
+ 	xargs file -L 2>/dev/null | grep "ELF.*shared object" | cut -d: -f1)

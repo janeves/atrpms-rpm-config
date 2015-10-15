@@ -1,0 +1,6 @@
+# /etc/rpm/macros.bcond
+# macros used in rpm 4.4, not available in previous versions
+%bcond_with()		%{expand:%%{?_with_%{1}:%%global with_%{1} 1}}
+%bcond_without()	%{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
+%with()		%{expand:%%{?with_%{1}:1}%%{!?with_%{1}:0}}
+%without()	%{expand:%%{?with_%{1}:0}%%{!?with_%{1}:1}}

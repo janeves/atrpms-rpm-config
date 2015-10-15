@@ -1,0 +1,95 @@
+# Some distributions use a different compiler than the default one for
+# building the kernel
+%_kernelcompiler %(echo %{expand:%%_kernelcompiler_%{distid}} | grep '^%' > /dev/null && echo /usr/bin/gcc || echo %{expand:%%_kernelcompiler_%{distid}})
+%_kernelcompiler_fc1 /usr/bin/gcc32
+
+%kmdl_kernelsrcdir	/lib/modules/%(uname -r)/build
+%_unamer		%(/usr/lib/rpm/atrpms/find-unamer.sh "%{kmdl_kernelsrcdir}")
+
+%kmdl_userland		%(test "%{_kpkgname}" = "%%{_kpkgname}" && echo 1 || echo 0)
+
+%_kflavour	%(echo %{_unamer} | grep -E '(smp|bigmem|hugemem|largesmp|xen0|xenU|xen|kdump|debug|PAE|PAEdebug)' | sed -e's/^.*\\(smp\\|bigmem\\|hugemem\\|largesmp\\|xen0\\|xenU\\|xen\\|kdump\\|debug\\|PAE\\|PAEdebug\\).*$/\\1/')
+
+%_unamer_noflavour	%(echo %{_unamer} | sed -e's/^\\(.*\\)\\(smp\\|bigmem\\|hugemem\\|largesmp\\|xen0\\|xenU\\|xen\\|kdump\\|debug\\|PAE\\|PAEdebug\\).*$/\\1/')
+%_unamer_noarch		%(echo %{_unamer} | sed -e's/\\.%{_target_cpu}//')
+
+# The name of the kernel with flavour ("kernel", "kernel-smp", ...)
+%_kname		%(echo kernel-%{_kflavour} | sed -e's/-$//')
+
+# "_unamer": the output of "uname -r" of the kernel to build for
+# (default: the running one)
+# "_kernelsrcdir": The directory of the sources used to build "kernel"
+# (default: /lib/modules/%{_unamer}/build)
+
+#
+%kmdl_name_with_arch %{_kpkgname}-kmdl-%{_unamer}
+%kmdl_name %{_kpkgname}-kmdl-%{_unamer_noarch}
+%kmdl_nameof() %1-kmdl-%{_unamer_noarch}
+%kmdl_namepure %{_kpkgname}-kmdl
+
+%_kernelbuildreq %{nil}
+
+%kmdl() \
+%{expand:%%global _kpkgname %1} \
+%_kernelbuildreq \
+%{nil}
+
+%kmdl_parentdependencies\
+Requires: %{kmdl_namepure}-%{evr}
+
+%kmdl_dependencies\
+Requires: /boot/vmlinuz-%{_unamer}\
+Requires: %__depmod\
+Conflicts: modutils < 2.4.14\
+BuildRequires: %_kernelcompiler\
+Provides: %kmdl_namepure-%{evr}\
+Provides: %kmdl_namepure-%_unamer = %{evr}\
+Provides: %kmdl_name_with_arch\
+Provides: kernel-modules = %{_unamer}\
+#\
+# backward compatibility kernel-module-foo\
+Obsoletes: kernel-module-%{_kpkgname}\
+Obsoletes: kernel-module-%{_kpkgname}-%{evr}\
+Obsoletes: kernel-module-%{_kpkgname}-%_unamer <= %{evr}
+
+%kmdl_moduledir /lib/modules/%{_unamer}/updates
+
+%kmdl_config %{nil}
+
+%kmdl_desc\
+This package contains the %_kpkgname kernel modules for the Linux kernel package:\
+%{_kname}-%{_unamer_noflavour}.%{_target_cpu}.rpm.
+
+%kmdl_install\
+depmod -ae -F /boot/System.map-%{_unamer} %{_unamer} > /dev/null 2>&1 || :
+
+%kmdl_remove\
+depmod -ae -F /boot/System.map-%{_unamer} %{_unamer} > /dev/null 2>&1 || :
+
+## Note^2: A modified copy to reflect different debuginfo packages for kmdls
+%debuginfoname %(test "%{kmdl_userland}" = 1 && echo debuginfo || echo "-n %{kmdl_name}-debuginfo")
+
+#	Template for debug information sub-package.
+# NOTE: This is a copy from rpm to get the ifnarch noarch fix, it can be removed later
+%debug_package \
+%ifnarch noarch\
+%global __debug_package 1\
+%package %{debuginfoname} \
+Summary: Debug information for package %{name}\
+Group: Development/Debug\
+%description %{debuginfoname}\
+This package provides debug information for package %{name}.\
+Debug information is useful when developing applications that use this\
+package or when debugging this package.\
+%files %{debuginfoname} -f debugfiles.list\
+%defattr(-,root,root)\
+%endif\
+%{nil}
+
+#
+#       Path to script that creates debug symbols in a /usr/lib/debug
+#       shadow tree.
+%__debug_install_post   \
+   /usr/lib/rpm/atrpms/find-debuginfo.sh %{_builddir}/%{?buildsubdir}\
+%{nil}
+

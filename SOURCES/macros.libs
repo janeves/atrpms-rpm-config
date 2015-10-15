@@ -1,0 +1,72 @@
+#######################################################################################################
+%__lib_name() lib%(echo %1 | grep '[0-9]$' > /dev/null && echo %{1}_%2 || echo %1%2)
+
+%lib_package() \
+%global __lib_dependencies %{?__lib_dependencies:%(echo -n %__lib_dependencies | sed -e's,%%,%%%%,g'),}%%%%{__lib_name %1 %2} = %{evr}\
+%global __lib_packages %{?__lib_packages:%(echo %__lib_packages | sed -e's,%%,%%%%,g')}%%%%{__lib_package %1 %2}\
+%global __lib_package_list %{?__lib_package_list:%(echo %__lib_package_list | sed -e's,%%,%%%%,g')} %1 %2
+
+
+%__lib_package() \
+%global _enable_devel_packages 1\
+%global __the_lib_name lib%(echo %1 | grep '[0-9]$' > /dev/null && echo %{1}_%2 || echo %1%2)\
+%package -n %__the_lib_name\
+Summary: Shared libraries for package %{name}\
+Group: System Environment/Libraries\
+Provides: shared-library-package\
+%(echo %__the_lib_name | grep -- - > /dev/null && echo "Obsoletes: %__the_lib_name" | sed -e's,-,,g')\
+%description -n %__the_lib_name\
+This package provides the shared libraries lib%1.so.%{2}* for the package %{name}.\
+Shared libraries are required at runtime for software built against %{name}.\
+Keeping shared libraries in a separate package enables their use as\
+forward/backward compatibility packages.\
+%post -n %__the_lib_name -p %__ldconfig\
+%postun -n %__the_lib_name -p %__ldconfig\
+%if %{kmdl_userland}\
+%files -n %__the_lib_name -f %{__the_lib_name}.list \
+%endif\
+%{nil}
+
+%lib_dependencies %{?__lib_dependencies:Requires: %{expand:%__lib_dependencies}}
+
+%devel_extra_Requires() \
+%global __devel_extra_Requires %{?__devel_extra_Requires:%__devel_extra_Requires, }%*
+
+%devel_extra_Obsoletes() \
+%global __devel_extra_Obsoletes %{?__devel_extra_Obsoletes:%__devel_extra_Obsoletes, }%*
+
+%devel_extra_Provides() \
+%global __devel_extra_Provides %{?__devel_extra_Provides:%__devel_extra_Provides, }%*
+
+%devel_extra_Conflicts() \
+%global __devel_extra_Conflicts %{?__devel_extra_Conflicts:%__devel_extra_Conflicts, }%*
+
+#
+%devel_package \
+%global __devel_package 1\
+%package devel\
+Summary: Development files for building against the %{name} package\
+Group: Development/Libraries\
+%lib_dependencies\
+%{?__devel_extra_Requires:Requires: %{__devel_extra_Requires}}\
+%{?__devel_extra_Obsoletes:Obsoletes: %{__devel_extra_Obsoletes}}\
+%{?__devel_extra_Provides:Provides: %{__devel_extra_Provides}}\
+%{?__devel_extra_Conflicts:Conflicts: %{__devel_extra_Conflicts}}\
+%description devel\
+This package provides the files necessary for development against\
+%{name}. Use this package if you need to build a package depending on\
+%{name} at build time, or if you want to do your own development\
+against %{name}.\
+%if %{kmdl_userland}\
+%files devel -f develfiles.list\
+%defattr(-,root,root,-)\
+%endif\
+%{nil}
+
+%__lib_install_post \
+   /usr/lib/rpm/atrpms/find-lib.sh %{buildroot} %{_builddir}/%{buildsubdir} %{__lib_package_list} \
+%{nil}
+
+%__devel_install_post   \
+   /usr/lib/rpm/atrpms/find-devel.sh %{buildroot} %{_builddir}/%{buildsubdir}\
+%{nil}

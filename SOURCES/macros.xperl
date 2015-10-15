@@ -1,0 +1,80 @@
+################################################################ perl
+
+# Two of these are already provided
+#perl_archlib		%(eval "`perl -V:installarchlib`"; echo $installarchlib)
+%perl_privlib		%(eval "`perl -V:installprivlib`"; echo $installprivlib)
+
+#perl_sitearch		%(eval "`perl -V:installsitearch`"; echo $installsitearch)
+%perl_sitelib		%(eval "`perl -V:installsitelib`"; echo $installsitelib)
+
+%perl_vendorarch	%(eval "`perl -V:installvendorarch`"; echo $installvendorarch)
+%perl_vendorlib		%(eval "`perl -V:installvendorlib`"; echo $installvendorlib)
+
+%perl_bin		%(eval "`perl -V:installbin`"; echo $installbin)
+%perl_script		%(eval "`perl -V:installscript`"; echo $installscript)
+%perl_man1dir		%(eval "`perl -V:installman1dir`"; echo $installman1dir)
+%perl_man3dir		%(eval "`perl -V:installman3dir`"; echo $installman3dir)
+
+%perl_version		%(eval "`perl -V:version`"; echo $version)
+
+%perl_module() %{expand:%%global pkgname %1}\
+Requires: atrpms-perl-module-helper \
+BuildRequires: perl, atrpms-perl-module-helper\
+#Requires: perl(:MODULE_COMPAT_%perl_version) \
+Requires: %(perl -MConfig -le 'if (defined $Config{useithreads}) { print "perl(:WITH_ITHREADS)" } else { print "perl(:WITHOUT_ITHREADS)" }')\
+Requires: %(perl -MConfig -le 'if (defined $Config{usethreads}) { print "perl(:WITH_THREADS)" } else { print "perl(:WITHOUT_THREADS)" }')\
+Requires: %(perl -MConfig -le 'if (defined $Config{uselargefiles}) { print "perl(:WITH_LARGEFILES)" } else { print "perl(:WITHOUT_LARGEFILES)" }')\
+Name: perl-%1\
+Version: %2\
+Release: %3%{?dist}\
+%{nil}
+
+%perl_module_wo_prefix() %{expand:%%global pkgname %1}\
+Requires: atrpms-perl-module-helper \
+BuildRequires: perl, atrpms-perl-module-helper\
+#Requires: perl(:MODULE_COMPAT_%perl_version) \
+Requires: %(perl -MConfig -le 'if (defined $Config{useithreads}) { print "perl(:WITH_ITHREADS)" } else { print "perl(:WITHOUT_ITHREADS)" }')\
+Requires: %(perl -MConfig -le 'if (defined $Config{usethreads}) { print "perl(:WITH_THREADS)" } else { print "perl(:WITHOUT_THREADS)" }')\
+Requires: %(perl -MConfig -le 'if (defined $Config{uselargefiles}) { print "perl(:WITH_LARGEFILES)" } else { print "perl(:WITHOUT_LARGEFILES)" }')\
+Name: %1\
+Version: %2\
+Release: %3%{?dist}\
+%{nil}
+
+#_perl_extra_path	%{buildroot}%{perl_sitearch}:%{buildroot}%{perl_sitelib}:%{perl_sitearch}:%{perl_sitelib}
+%_perl_extra_path	%{buildroot}%{perl_vendorarch}:%{buildroot}%{perl_vendorlib}
+%_perl5lib		test -z "$PERL5LIB" && export PERL5LIB=%{_perl_extra_path} || export PERL5LIB="$PERL5LIB":%{_perl_extra_path}
+
+%_perl_buildroot	$(DESTDIR_REDIRECT)
+
+# Install by default in vendor, add INSTALLDIRS=perl or site, if appropriate.
+%perl_configure() %{_perl5lib} \
+  test -z "$CFLAGS" && export CFLAGS="%{optflags}" \
+  %{__perl} Makefile.PL 'PREFIX=%{_perl_buildroot}%{_prefix}' INSTALLDIRS=vendor %* \
+  %{__perl} -pi -e 's/^\tLD_RUN_PATH=[^\s]+\s*/\t/' Makefile \
+  %{nil}
+
+%perl_make %{_perl5lib}\
+  %{__make} OPTIMIZE="$RPM_OPT_FLAGS" \
+  %{nil}
+
+
+%perl_makecheck() %{_perl5lib}\
+%if %{?_without_check:0}%{!?_without_check:1}\
+%{__make} test %*\
+%endif \
+%{nil}
+
+
+# removed second find, FC4's find looks broken ... (?)
+%perl_makeinstall_nofc4() %{_perl5lib}\
+%{__make} install DESTDIR_REDIRECT=%{buildroot} %*\
+find %{buildroot} \\( -name .packlist -or -name perllocal.pod -or \\( -name '*.bs' -a -empty \\) \\) -exec rm -f {} \\;\
+find %{buildroot} -type d -depth -empty -exec rmdir {} \\; \
+%{nil}
+
+%perl_makeinstall() %{_perl5lib}\
+%{__make} install DESTDIR_REDIRECT=%{buildroot} %*\
+find %{buildroot} \\( -name .packlist -or -name perllocal.pod -or \\( -name '*.bs' -a -empty \\) \\) -exec rm -f {} \\;\
+%{nil}
+

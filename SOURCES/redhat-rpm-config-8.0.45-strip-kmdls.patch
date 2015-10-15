@@ -1,0 +1,33 @@
+--- atrpms-rpm-config-154/brp-strip-comment-note.kmdls	2005-06-10 19:19:17.000000000 +0200
++++ atrpms-rpm-config-154/brp-strip-comment-note	2006-08-27 14:37:59.000000000 +0200
+@@ -11,7 +11,7 @@
+ 
+ # Strip .comment and .note sections (the latter only if it is not allocated)
+ # for already stripped elf files in the build root
+-for f in `find $RPM_BUILD_ROOT -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
++for f in `find $RPM_BUILD_ROOT -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 -or -path $RPM_BUILD_ROOT/lib/modules/\* \) -exec file {} \; | \
+         grep -v "^${RPM_BUILD_ROOT}/\?usr/lib/debug"  | \
+ 	sed -n -e 's/^\(.*\):[ 	]*ELF.*, stripped/\1/p'`; do
+ 	note="-R .note"
+--- atrpms-rpm-config-154/brp-strip.kmdls	2005-06-10 19:19:17.000000000 +0200
++++ atrpms-rpm-config-154/brp-strip	2006-08-27 14:37:59.000000000 +0200
+@@ -6,7 +6,7 @@
+ [ -z "$STRIP" -a -n "$1" ] && STRIP="$1"
+ [ -z "$STRIP" ] && STRIP=strip
+ # Strip ELF binaries
+-for f in `find $RPM_BUILD_ROOT -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
++for f in `find $RPM_BUILD_ROOT -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 -or -path $RPM_BUILD_ROOT/lib/modules/\* \) -exec file {} \; | \
+         grep -v "^${RPM_BUILD_ROOT}/\?usr/lib/debug"  | \
+ 	grep -v ' shared object,' | \
+ 	sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped/\1/p'`; do
+--- atrpms-rpm-config-169/find-debuginfo.sh~	2008-01-12 22:58:41.000000000 +0100
++++ atrpms-rpm-config-169/find-debuginfo.sh	2008-01-12 22:59:56.000000000 +0100
+@@ -175,7 +175,7 @@
+ 
+ # Strip ELF binaries
+ find $RPM_BUILD_ROOT ! -path "${debugdir}/*.debug" -type f \
+-     		     \( -perm -0100 -or -perm -0010 -or -perm -0001 \) \
++     		     \( -perm -0100 -or -perm -0010 -or -perm -0001 -or -path $RPM_BUILD_ROOT/lib/modules/\* \) \
+ 		     -print |
+ file -N -f - | sed -n -e 's/^\(.*\):[ 	]*.*ELF.*, not stripped/\1/p' |
+ xargs --no-run-if-empty stat -c '%h %D_%i %n' |
